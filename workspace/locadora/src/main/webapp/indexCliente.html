@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Clientes</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        async function loadClientes() {
+            try {
+                const response = await fetch('cliente');
+                if (!response.ok) throw new Error(await response.text());
+
+                const clientes = await response.json();
+                const tabela = document.getElementById('clientesTabela');
+                tabela.innerHTML = ''; // Limpa a tabela
+                
+                clientes.forEach(cliente => {
+                    const row = tabela.insertRow();
+                    row.insertCell(0).textContent = cliente.cliCodigo;
+                    row.insertCell(1).textContent = cliente.cliNome;
+                    row.insertCell(2).textContent = cliente.cliEndereco;
+                    row.insertCell(3).textContent = cliente.cliTelefone;
+                    row.insertCell(4).textContent = cliente.cliCpf;
+                    const actionsCell = row.insertCell(5);
+                    actionsCell.innerHTML = `
+                        <button class="edit-btn" onclick="editCliente(${cliente.cliCodigo})">Editar</button>
+                        <button class="delete-btn" onclick="deleteCliente(${cliente.cliCodigo})">Excluir</button>
+                    `;
+                });
+            } catch (error) {
+                showError(`Erro ao carregar clientes: ${error.message}`);
+            }
+        }
+
+        async function saveCliente() {
+            try {
+                const cliente = {
+                    cliCodigo: document.getElementById('cliCodigo').value,
+                    cliNome: document.getElementById('cliNome').value,
+                    cliEndereco: document.getElementById('cliEndereco').value,
+                    cliTelefone: document.getElementById('cliTelefone').value,
+                    cliCpf: document.getElementById('cliCpf').value
+                };
+
+                const method = cliente.cliCodigo ? 'PUT' : 'POST';
+                const response = await fetch('cliente', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cliente)
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                alert('Operação realizada com sucesso!');
+                clearForm();
+                loadClientes();
+            } catch (error) {
+                showError(`Erro ao salvar cliente: ${error.message}`);
+            }
+        }
+
+        async function deleteCliente(cliCodigo) {
+            if (confirm('Tem certeza que deseja excluir este cliente?')) {
+                try {
+                    const response = await fetch(`cliente?id=${cliCodigo}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error(await response.text());
+
+                    alert('Cliente excluído com sucesso!');
+                    loadClientes();
+                } catch (error) {
+                    showError(`Erro ao excluir cliente: ${error.message}`);
+                }
+            }
+        }
+
+        function editCliente(cliCodigo) {
+            fetch(`cliente?id=${cliCodigo}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.json();
+                })
+                .then(cliente => {
+                    document.getElementById('cliCodigo').value = cliente.cliCodigo;
+                    document.getElementById('cliNome').value = cliente.cliNome;
+                    document.getElementById('cliEndereco').value = cliente.cliEndereco;
+                    document.getElementById('cliTelefone').value = cliente.cliTelefone;
+                    document.getElementById('cliCpf').value = cliente.cliCpf;
+                })
+                .catch(error => showError(`Erro ao carregar cliente para edição: ${error.message}`));
+        }
+
+        function clearForm() {
+            document.getElementById('cliCodigo').value = '';
+            document.getElementById('cliNome').value = '';
+            document.getElementById('cliEndereco').value = '';
+            document.getElementById('cliTelefone').value = '';
+            document.getElementById('cliCpf').value = '';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+        }
+
+        function clearError() {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '';
+        }
+
+        window.onload = loadClientes;
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Gestão de Clientes</h1>
+    </header>
+    <main>
+        <div id="error" class="error"></div>
+        <section class="form-section">
+            <h2>Cadastro de Cliente</h2>
+            <form onsubmit="event.preventDefault(); saveCliente(); clearError();">
+                <input type="hidden" id="cliCodigo" style="width: 43px; ">
+                <div class="form-group">
+                    <label for="cliNome">Nome:</label>
+                    <input type="text" id="cliNome" required style="width: 368px; ">
+                </div>
+                <div class="form-group">
+                    <label for="cliEndereco">Endereço:</label>
+                    <input type="text" id="cliEndereco" required style="width: 365px; ">
+                </div>
+                <div class="form-group">
+                    <label for="cliTelefone">Telefone:</label>
+                    <input type="text" id="cliTelefone" required style="width: 377px; ">
+                </div>
+                <div class="form-group">
+                    <label for="cliCpf">CPF:</label>
+                    <input type="text" id="cliCpf" required style="width: 373px; ">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">Salvar</button>
+                    <button type="button" class="cancel-btn" onclick="clearForm(); clearError();">Cancelar</button>
+                </div>
+            </form>
+        </section>
+        <section class="table-section">
+            <h2>Lista de Clientes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Endereço</th>
+                        <th>Telefone</th>
+                        <th>CPF</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="clientesTabela"></tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Contratos</title>
+    <script>
+        // Função para carregar a lista de contratos
+        async function loadContratos() {
+            try {
+                const response = await fetch('contrato');
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                const contratos = await response.json();
+                const tabela = document.getElementById('contratosTabela');
+                tabela.innerHTML = ''; // Limpa a tabela
+                contratos.forEach(contrato => {
+                    const row = tabela.insertRow();
+                    row.insertCell(0).textContent = contrato.conCodigo;
+                    row.insertCell(1).textContent = contrato.cliente.cliNome;
+                    row.insertCell(2).textContent = contrato.conDataInicio;
+                    row.insertCell(3).textContent = contrato.conDataFim;
+                    row.insertCell(4).textContent = contrato.conValorContrato.toFixed(2);
+                    const actionsCell = row.insertCell(5);
+                    actionsCell.innerHTML = `
+                        <button onclick="editContrato(${contrato.conCodigo})">Editar</button>
+                        <button onclick="deleteContrato(${contrato.conCodigo})">Excluir</button>
+                    `;
+                });
+            } catch (error) {
+                console.error('Erro ao carregar contratos:', error.message);
+                document.getElementById('error').textContent = `Erro ao carregar contratos: ${error.message}`;
+            }
+        }
+
+        // Função para salvar ou atualizar um contrato
+        async function saveContrato() {
+    const clienteCodigo = document.getElementById('clienteCodigo').value.trim();
+    const dataInicio = document.getElementById('dataInicio').value.trim();
+    const dataFim = document.getElementById('dataFim').value.trim();
+    const valorContrato = document.getElementById('valorContrato').value.trim();
+    const conCodigo = document.getElementById('conCodigo').value.trim();
+
+    // Validação dos campos obrigatórios
+    if (!clienteCodigo || !dataInicio || !dataFim || !valorContrato) {
+        alert('Preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    const contrato = {
+        cliente: { cliCodigo: parseInt(clienteCodigo) },
+        conDataInicio: dataInicio,
+        conDataFim: dataFim,
+        conValorContrato: parseFloat(valorContrato),
+    };
+
+    if (conCodigo) {
+        contrato.conCodigo = parseInt(conCodigo);
+    }
+
+    try {
+        const method = conCodigo ? 'PUT' : 'POST';
+        const response = await fetch('contrato', {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(contrato),
+        });
+
+        const contentType = response.headers.get('Content-Type') || '';
+        if (!response.ok) {
+            let errorMessage = 'Erro desconhecido.';
+            if (contentType.includes('application/json')) {
+                const error = await response.json();
+                errorMessage = error.error || errorMessage;
+            } else {
+                const errorText = await response.text();
+                errorMessage = errorText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        if (contentType.includes('application/json')) {
+            const result = await response.json();
+            alert(result.message || 'Contrato salvo com sucesso!');
+        } else {
+            alert('Contrato salvo com sucesso!');
+        }
+
+        clearForm();
+        loadContratos();
+    } catch (error) {
+        console.error('Erro ao salvar contrato:', error.message);
+        alert(`Erro ao salvar contrato: ${error.message}`);
+    }
+}
+
+        // Função para editar um contrato
+        async function editContrato(conCodigo) {
+            try {
+                const response = await fetch(`contrato?id=${conCodigo}`);
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                const contrato = await response.json();
+                document.getElementById('conCodigo').value = contrato.conCodigo;
+                document.getElementById('clienteCodigo').value = contrato.cliente.cliCodigo;
+                document.getElementById('dataInicio').value = contrato.conDataInicio;
+                document.getElementById('dataFim').value = contrato.conDataFim;
+                document.getElementById('valorContrato').value = contrato.conValorContrato;
+            } catch (error) {
+                console.error('Erro ao carregar contrato:', error.message);
+                alert(`Erro ao carregar contrato: ${error.message}`);
+            }
+        }
+
+        // Função para excluir um contrato
+        async function deleteContrato(conCodigo) {
+            if (confirm('Tem certeza que deseja excluir este contrato?')) {
+                try {
+                    const response = await fetch(`contrato?id=${conCodigo}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.text();
+                        throw new Error(error);
+                    }
+
+                    alert('Contrato excluído com sucesso!');
+                    loadContratos();
+                } catch (error) {
+                    console.error('Erro ao excluir contrato:', error.message);
+                    alert(`Erro ao excluir contrato: ${error.message}`);
+                }
+            }
+        }
+
+        // Função para limpar o formulário
+        function clearForm() {
+            document.getElementById('conCodigo').value = '';
+            document.getElementById('clienteCodigo').value = '';
+            document.getElementById('dataInicio').value = '';
+            document.getElementById('dataFim').value = '';
+            document.getElementById('valorContrato').value = '';
+        }
+
+        // Carrega os contratos ao carregar a página
+        window.onload = loadContratos;
+    </script>
+</head>
+<body>
+    <h1>Gerenciamento de Contratos</h1>
+
+    <div id="error" style="color: red;"></div>
+
+    <form onsubmit="event.preventDefault(); saveContrato();">
+        <input type="hidden" id="conCodigo">
+        <label for="clienteCodigo">Código do Cliente:</label>
+        <input type="number" id="clienteCodigo" required><br>
+
+        <label for="dataInicio">Data de Início:</label>
+        <input type="date" id="dataInicio" required><br>
+
+        <label for="dataFim">Data de Fim:</label>
+        <input type="date" id="dataFim" required><br>
+
+        <label for="valorContrato">Valor do Contrato:</label>
+        <input type="number" step="0.01" id="valorContrato" required><br>
+
+        <button type="submit">Salvar</button>
+        <button type="button" onclick="clearForm()">Cancelar</button>
+    </form>
+
+    <h2>Lista de Contratos</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Nome do Cliente</th>
+                <th>Data de Início</th>
+                <th>Data de Fim</th>
+                <th>Valor</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="contratosTabela"></tbody>
+    </table>
+</body>
+</html>

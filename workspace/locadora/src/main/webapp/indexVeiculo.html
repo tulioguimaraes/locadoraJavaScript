@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Veículos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            padding: 8px 12px;
+            margin: 5px;
+        }
+    </style>
+    <script>
+        async function loadVeiculos() {
+            try {
+                const response = await fetch('veiculo');
+                if (!response.ok) throw new Error(await response.text());
+
+                const veiculos = await response.json();
+                const tabela = document.getElementById('veiculosTabela');
+                tabela.innerHTML = ''; // Limpa a tabela
+                
+                veiculos.forEach(veiculo => {
+                    const row = tabela.insertRow();
+                    row.insertCell(0).textContent = veiculo.veiCodigo;
+                    row.insertCell(1).textContent = veiculo.veiModelo;
+                    row.insertCell(2).textContent = veiculo.veiMarca;
+                    row.insertCell(3).textContent = veiculo.veiPlaca;
+                    row.insertCell(4).textContent = veiculo.veiValor.toFixed(2);
+                    const actionsCell = row.insertCell(5);
+                    actionsCell.innerHTML = `
+                        <button onclick="editVeiculo(${veiculo.veiCodigo})">Editar</button>
+                        <button onclick="deleteVeiculo(${veiculo.veiCodigo})">Excluir</button>
+                    `;
+                });
+            } catch (error) {
+                showError(`Erro ao carregar veículos: ${error.message}`);
+            }
+        }
+
+        async function saveVeiculo() {
+            try {
+                const veiculo = {
+                    veiCodigo: document.getElementById('veiCodigo').value,
+                    veiModelo: document.getElementById('veiModelo').value,
+                    veiMarca: document.getElementById('veiMarca').value,
+                    veiPlaca: document.getElementById('veiPlaca').value,
+                    veiValor: parseFloat(document.getElementById('veiValor').value)
+                };
+
+                const method = veiculo.veiCodigo ? 'PUT' : 'POST';
+                const response = await fetch('veiculo', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(veiculo)
+                });
+
+                if (!response.ok) throw new Error(await response.text());
+
+                alert('Operação realizada com sucesso!');
+                clearForm();
+                loadVeiculos();
+            } catch (error) {
+                showError(`Erro ao salvar veículo: ${error.message}`);
+            }
+        }
+
+        async function deleteVeiculo(veiCodigo) {
+            if (confirm('Tem certeza que deseja excluir este veículo?')) {
+                try {
+                    const response = await fetch(`veiculo?id=${veiCodigo}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error(await response.text());
+
+                    alert('Veículo excluído com sucesso!');
+                    loadVeiculos();
+                } catch (error) {
+                    showError(`Erro ao excluir veículo: ${error.message}`);
+                }
+            }
+        }
+
+        function editVeiculo(veiCodigo) {
+            fetch(`veiculo?id=${veiCodigo}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.json();
+                })
+                .then(veiculo => {
+                    document.getElementById('veiCodigo').value = veiculo.veiCodigo;
+                    document.getElementById('veiModelo').value = veiculo.veiModelo;
+                    document.getElementById('veiMarca').value = veiculo.veiMarca;
+                    document.getElementById('veiPlaca').value = veiculo.veiPlaca;
+                    document.getElementById('veiValor').value = veiculo.veiValor;
+                })
+                .catch(error => showError(`Erro ao carregar veículo para edição: ${error.message}`));
+        }
+
+        function clearForm() {
+            document.getElementById('veiCodigo').value = '';
+            document.getElementById('veiModelo').value = '';
+            document.getElementById('veiMarca').value = '';
+            document.getElementById('veiPlaca').value = '';
+            document.getElementById('veiValor').value = '';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+        }
+
+        function clearError() {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '';
+        }
+
+        window.onload = loadVeiculos;
+    </script>
+</head>
+<body>
+    <h1>Gestão de Veículos</h1>
+    <div id="error" class="error"></div>
+
+    <h2>Cadastro de Veículo</h2>
+    <form onsubmit="event.preventDefault(); saveVeiculo(); clearError();">
+        <input type="hidden" id="veiCodigo">
+        <label for="veiModelo">Modelo:</label>
+        <input type="text" id="veiModelo" required><br>
+
+        <label for="veiMarca">Marca:</label>
+        <input type="text" id="veiMarca" required><br>
+
+        <label for="veiPlaca">Placa:</label>
+        <input type="text" id="veiPlaca" required><br>
+
+        <label for="veiValor">Valor:</label>
+        <input type="number" step="0.01" id="veiValor" required><br>
+
+        <button type="submit">Salvar</button>
+        <button type="button" onclick="clearForm(); clearError();">Cancelar</button>
+    </form>
+
+    <h2>Lista de Veículos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>Placa</th>
+                <th>Valor</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="veiculosTabela"></tbody>
+    </table>
+</body>
+</html>

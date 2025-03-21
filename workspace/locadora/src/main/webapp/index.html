@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Inicial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: white;
+            background-color: #4CAF50;
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .links a:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            margin-top: 30px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gerenciamento de Locadora</h1>
+    </header>
+
+    <div class="links">
+        <a href="indexCliente.html">Manter Clientes</a>
+        <a href="indexVeiculo.html">Manter Veículos</a>
+        <a href="indexContrato.html">Manter Contratos</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Locadora - Todos os direitos reservados.</p>
+    </footer>
+</body>
+</html>
